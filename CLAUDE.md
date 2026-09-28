@@ -3,7 +3,7 @@
 ## Architettura
 Strava → webhook → Supabase Edge Function `strava-webhook` → tabella `activities`
 Pagina `index.html` (GitHub Pages) → `fetch` → Edge Function `dashboard-api` (header `x-dashboard-pin`) → funzioni SQL:
-- `dashboard_load()` → JSON {settings, tests, acts, plan, last}
+- `dashboard_load()` → JSON {settings, tests, acts, plan, weeks, last}
 - `dashboard_save_thresholds(patch jsonb, p_test_date date)` → aggiorna soglie + storico test
 - `dashboard_save_race(race jsonb)` → aggiorna tempi obiettivo
 Le funzioni SQL sono eseguibili solo da `service_role` (revocate ad anon/authenticated).
@@ -15,6 +15,7 @@ Le funzioni SQL sono eseguibili solo da `service_role` (revocate ad anon/authent
 - `planned_sessions` (session_date, slot, sport[swim|bike|run|brick|strength|rest|race|other], title, duration_min, intensity, details, purpose, strava_id, status[planned|done|skipped|moved], source)
   - `details`: prosa strutturata letta dal popup (passi separati da " → " o a capo; ripetute tipo `3x8' @ 157-166 W rec 4'`; esercizi forza su righe `A1 ... | A2 ...`).
   - `purpose`: spiegazione mostrata nel popup, una riga per sezione `Etichetta: testo` (Obiettivo, Come si esegue, Recuperi, Se la giornata è no...).
+- `plan_weeks` (week_start lunedì PK, kind[carico|scarico|test|transizione], label es. "Carico 2/3", focus, block, source) — etichetta mostrata accanto al titolo della settimana; per 'carico' il label "n/m" disegna la barra di progressione.
 - `weekly_plans` (legacy, formati eterogenei)
 
 ## Programma di allenamento
