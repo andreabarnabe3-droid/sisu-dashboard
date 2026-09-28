@@ -12,11 +12,14 @@ Le funzioni SQL sono eseguibili solo da `service_role` (revocate ad anon/authent
 - `activities` (strava_id, type, distance_m, moving_time_s, started_at, raw jsonb, laps, streams). Campi Strava: `raw->>'field'`.
 - `athlete_settings` (id=1, data jsonb): ftp_bike, lthr_bike, pace_run (s/km), lthr_run, cp_run, race{date, goal_s, swim_s, t1_s, bike_s, t2_s, run_s}
 - `threshold_tests` (test_date, metric, value, note) — metric: ftp_bike, lthr_bike, lthr_run, cp_run, threshold_pace_run, css_swim, hrmax
-- `planned_sessions` (session_date, slot, sport[swim|bike|run|brick|strength|rest|race|other], title, duration_min, intensity, details, strava_id, status[planned|done|skipped|moved], source)
+- `planned_sessions` (session_date, slot, sport[swim|bike|run|brick|strength|rest|race|other], title, duration_min, intensity, details, purpose, strava_id, status[planned|done|skipped|moved], source)
+  - `details`: prosa strutturata letta dal popup (passi separati da " → " o a capo; ripetute tipo `3x8' @ 157-166 W rec 4'`; esercizi forza su righe `A1 ... | A2 ...`).
+  - `purpose`: spiegazione mostrata nel popup, una riga per sezione `Etichetta: testo` (Obiettivo, Come si esegue, Recuperi, Se la giornata è no...).
 - `weekly_plans` (legacy, formati eterogenei)
 
 ## Programma di allenamento
-Per aggiungere sessioni: `insert into planned_sessions (session_date, sport, title, duration_min, intensity, details, source) values (...)` con source='claude'. La dashboard le mostra subito (cerchio vuoto = pianificato).
+Per aggiungere sessioni: `insert into planned_sessions (session_date, sport, title, duration_min, intensity, details, source) values (...)` con source='claude'. La dashboard le mostra subito (cerchio vuoto = pianificato); cliccando si apre il popup di dettaglio con profilo, passi, recuperi e spiegazione.
+Il piano ott–dic 2026 (source='plan_q4_2026') è generato da `genera_piano_q4_2026.py` (fuori dal repo).
 
 ## Modifiche alla pagina
 Un solo file `index.html` (HTML+CSS+JS inline, nessuna build). Push su `main` → GitHub Pages aggiorna in 1-2 minuti.

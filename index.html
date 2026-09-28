@@ -169,6 +169,7 @@ button{cursor:pointer}
 .dots i.o{background:transparent!important;border:2px solid currentColor}
 .cal-open{background:none;border:0;padding:0;text-align:left;width:100%;display:flex;flex-direction:column;gap:10px}
 
+#sessOverlay{z-index:20}
 .overlay{position:fixed;inset:0;background:rgba(8,14,18,.55);display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 24px) 16px 24px;z-index:10;overflow:auto}
 .modal{background:var(--surface);border:1px solid var(--line);border-radius:14px;max-width:1100px;width:100%;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .big-cal .cell{min-height:92px}
@@ -178,6 +179,40 @@ button{cursor:pointer}
 @media (max-width:620px){.big-cal .cell .ev span{display:none}.big-cal .cell{min-height:58px}}
 .day-detail{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface-2);display:flex;flex-direction:column;gap:8px}
 .skeleton{color:var(--faint)}
+/* session detail */
+button.item{border:0;background:none;padding:3px 4px;margin:-3px -4px;border-radius:6px;text-align:left;width:calc(100% + 8px);color:inherit;font:inherit}
+button.item:hover{background:color-mix(in srgb,var(--ink) 6%,transparent)}
+button.item .more{display:block;font-size:11px;color:var(--accent);margin-top:2px}
+.sess{max-width:680px;gap:16px}
+.sess-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.sess-head h2{font-size:26px;line-height:1.1}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chip{font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
+.chip.int-easy{color:var(--z2);border-color:currentColor}
+.chip.int-moderate{color:var(--z3);border-color:currentColor}
+.chip.int-hard{color:var(--z6);border-color:currentColor}
+.chip.int-test{color:var(--z7);border-color:currentColor}
+.sess h3{font-size:15px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px}
+.profile{border:1px solid var(--line);border-radius:10px;background:var(--surface-2);padding:10px 10px 4px}
+.profile svg{display:block;width:100%;height:auto}
+.profile .axis{font-family:var(--mono);font-size:10px;fill:var(--faint)}
+.pleg{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--muted);padding:6px 0 4px}
+.pleg span{display:inline-flex;align-items:center;gap:4px}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.step{display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px;align-items:start;border:1px solid var(--line);border-left-width:4px;border-radius:8px;padding:8px 10px;background:var(--surface-2)}
+.step .dur{font-family:var(--display);font-weight:700;font-size:18px;line-height:1.15}
+.step .txt{font-size:13.5px;overflow-wrap:anywhere}
+.step .rec{display:inline-block;margin-top:4px;font-size:11.5px;font-weight:600;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:6px;padding:1px 7px}
+.ex{display:grid;grid-template-columns:48px minmax(0,1fr);gap:8px;align-items:baseline;padding:6px 2px;border-top:1px solid var(--line);font-size:13.5px}
+.ex:first-child{border-top:0}
+.ex b{font-family:var(--display);font-size:15px;color:var(--strength)}
+.exs{border:1px solid var(--line);border-radius:8px;padding:2px 10px;background:var(--surface-2)}
+.notes{margin:0;padding-left:18px;color:var(--muted);font-size:13px;display:flex;flex-direction:column;gap:3px}
+.why{display:flex;flex-direction:column;gap:10px}
+.why p{margin:0;font-size:13.5px}
+.why p b{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.done-box{border:1px solid color-mix(in srgb,var(--ok) 45%,var(--line));background:color-mix(in srgb,var(--ok) 8%,var(--surface));border-radius:8px;padding:8px 10px;font-size:13px}
+@media (max-width:520px){.step{grid-template-columns:64px minmax(0,1fr)}.step .dur{font-size:16px}.sess-head h2{font-size:22px}}
 @media (prefers-reduced-motion:no-preference){.panel{transition:opacity .2s}}
 .loading .panel.data{opacity:.55}
 </style>
@@ -297,6 +332,10 @@ button{cursor:pointer}
     <div class="big-cal cal" id="bigCal"></div>
     <div class="day-detail" id="dayDetail" hidden></div>
   </div>
+</div>
+
+<div class="overlay" id="sessOverlay" hidden>
+  <div class="modal sess" role="dialog" aria-modal="true" aria-labelledby="sessTitle" id="sessModal"></div>
 </div>
 
 <script>
@@ -562,12 +601,13 @@ function renderWeek() {
     const d = addDays(mon, i), k = iso(d), e = byDay[k] || { acts: [], plan: [] };
     const items = [];
     e.plan.forEach(p => { const l = planLine(p); planned += (p.dur || 0) * 60;
-      items.push(`<div class="item planned" style="color:${sportColor(l.sp)}"><i class="sq"></i><div><div class="t" style="color:var(--ink)">${esc(l.title)}</div>${l.meta ? `<div class="meta">${esc(l.meta)}</div>` : ""}</div></div>`); });
+      items.push(`<button type="button" class="item planned" data-pid="${p.id}" style="color:${sportColor(l.sp)}" aria-label="Dettaglio: ${esc(l.title)}"><i class="sq"></i><div><div class="t" style="color:var(--ink)">${esc(l.title)}</div>${l.meta ? `<div class="meta">${esc(l.meta)}</div>` : ""}</div></button>`); });
     e.acts.forEach(a => { const l = actLine(a); tot[l.sp === "strength" ? "other" : l.sp] = (tot[l.sp === "strength" ? "other" : l.sp] || 0) + (a.s || 0);
       items.push(`<div class="item"><i class="sq" style="background:${sportColor(l.sp)}"></i><div><div class="t">${esc(l.title)}</div><div class="meta">${esc(l.meta)}</div></div></div>`); });
     html += `<div class="day${k === todayIso ? " today" : ""}"><div class="day-h"><b>${DOW[i]}</b><span>${d.getDate()} ${MON_S[d.getMonth()]}</span></div>${items.join("") || `<span class="none">${k > todayIso ? "Nessuna sessione pianificata" : "—"}</span>`}</div>`;
   }
   $("week").innerHTML = html;
+  $("week").querySelectorAll("[data-pid]").forEach(b => b.onclick = () => openSession(Number(b.dataset.pid), b));
   const done = tot.swim + tot.bike + tot.run + tot.other;
   $("weekTotals").innerHTML = `<span>Fatto <b>${hm(done)}</b></span><span style="color:var(--swim)">Nuoto <b>${hm(tot.swim)}</b></span><span style="color:var(--bike)">Bici <b>${hm(tot.bike)}</b></span><span style="color:var(--run)">Corsa <b>${hm(tot.run)}</b></span>${planned ? `<span>Pianificato <b>${hm(planned)}</b></span>` : ""}`;
 }
@@ -613,12 +653,166 @@ function renderDayDetail() {
   if (!k) { box.hidden = true; return; }
   const e = byDay[k] || { acts: [], plan: [] }; const d = parseISO(k);
   const rows = [
-    ...e.plan.map(p => { const l = planLine(p); return `<div class="item planned" style="color:${sportColor(l.sp)}"><i class="sq"></i><div style="color:var(--ink)"><div class="t">${esc(l.title)} <span class="meta">· pianificato${l.meta ? " · " + esc(l.meta) : ""}</span></div>${l.details ? `<div class="meta" style="font-family:var(--body)">${esc(l.details)}</div>` : ""}</div></div>`; }),
+    ...e.plan.map(p => { const l = planLine(p); return `<button type="button" class="item planned" data-pid="${p.id}" style="color:${sportColor(l.sp)}"><i class="sq"></i><div style="color:var(--ink)"><div class="t">${esc(l.title)} <span class="meta">· pianificato${l.meta ? " · " + esc(l.meta) : ""}</span></div><span class="more">Apri dettaglio →</span></div></button>`; }),
     ...e.acts.map(a => { const l = actLine(a); return `<div class="item"><i class="sq" style="background:${sportColor(l.sp)}"></i><div><div class="t">${esc(l.title)} <span class="meta">· ${esc(a.t || "")}</span></div><div class="meta">${esc(l.meta)}</div></div></div>`; })
   ];
   box.hidden = false;
   box.innerHTML = `<div class="eyebrow">${DOW[(d.getDay()+6)%7]} ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}</div>${rows.join("") || `<span class="none">Nessuna attività né sessione pianificata.</span>`}`;
+  box.querySelectorAll("[data-pid]").forEach(b => b.onclick = () => openSession(Number(b.dataset.pid), b));
 }
+
+// ---------- session detail ----------
+const INT_LABEL = { easy: "Facile", moderate: "Moderata", hard: "Intensa", test: "Test", rest: "Riposo" };
+const DOW_L = ["lunedì","martedì","mercoledì","giovedì","venerdì","sabato","domenica"];
+const toSec = (n, u) => Number(n) * (u === '"' ? 1 : 60);
+function fmtDur(sec) { if (sec >= 3600) { const h = Math.floor(sec/3600), m = Math.round((sec%3600)/60); return m ? `${h}h${pad(m)}` : `${h}h`; } return sec % 60 ? `${Math.floor(sec/60) ? Math.floor(sec/60) + "'" : ""}${sec%60}"` : `${sec/60}'`; }
+
+// intensity of a text fragment → fraction of threshold (bike: from watts vs FTP; otherwise from keywords)
+function levelOf(txt) {
+  const ftp = Number(state.settings.ftp_bike) || 185;
+  const w = txt.match(/(\d{2,3})-(\d{2,3}) W/);
+  if (w && !/^\s*\d+'?\s*Z2 \(/.test(txt)) return ((+w[1] + +w[2]) / 2) / ftp;
+  const t = txt.toLowerCase();
+  if (/tutto fuori|sprint/.test(t)) return 1.3;
+  if (/massimale|soglia\b(?!.*sotto)/.test(t) && !/sotto-soglia|sotto soglia/.test(t)) return 1.0;
+  if (/ritmo 5 km|salita|forte/.test(t)) return 1.1;
+  if (/sotto-soglia|sotto soglia/.test(t)) return 0.95;
+  if (/medio|tempo/.test(t)) return 0.85;
+  if (/z1|sciolto|trotto|camminat|recupero|agili/.test(t) && !/z2/.test(t)) return 0.5;
+  return 0.68; // Z2 / facile
+}
+const ZONE_OF = f => f < 0.56 ? 0 : f < 0.76 ? 1 : f < 0.91 ? 2 : f < 1.06 ? 3 : f < 1.21 ? 4 : 5;
+const ZONE_NAMES = ["Z1 recupero","Z2 endurance","Z3 tempo","Z4 soglia","Z5 VO2max","Z6+ anaerobico"];
+
+// parse one step of prose into timed segments [{sec, lvl, rec?}]
+function segmentsOf(txt) {
+  let m;
+  // 30/15 Rønnestad: "2 serie x (13 x 30" @ a-b W / 15" ...), 3' tra le serie"
+  if ((m = txt.match(/(\d+) serie x \((\d+) x (\d+)(['"]) @ ([^/]+)\/\s*(\d+)(['"])/))) {
+    const sets = +m[1], reps = +m[2], on = toSec(m[3], m[4]), off = toSec(m[6], m[7]);
+    const between = (txt.match(/(\d+)' tra le serie/) || [0, 3])[1] * 60;
+    const lvl = levelOf(m[5]); const out = [];
+    for (let s = 0; s < sets; s++) { for (let r = 0; r < reps; r++) { out.push({ sec: on, lvl }); out.push({ sec: off, lvl: 0.5, rec: true }); } if (s < sets - 1) out.push({ sec: between, lvl: 0.5, rec: true }); }
+    return out;
+  }
+  // repeats: "3x8' @ ... rec 4'"  /  "6x20" allunghi ... con 1'"  /  "8x45" in salita"
+  if ((m = txt.match(/(\d+)\s*x\s*(\d+)(['"])/)) && !/^\s*\d+x\d+(-\d+)?\b/.test(txt.replace(/x\d+(['"])/, ""))) {
+    const reps = +m[1], on = toSec(m[2], m[3]);
+    const r = txt.match(/(?:rec|con)\s+(\d+)(['"])/);
+    const off = r ? toSec(r[1], r[2]) : (/salita/.test(txt) ? 60 : 0);
+    const lvl = /allungh/.test(txt) ? 1.15 : levelOf(txt.replace(/rec .*$/, ""));
+    const out = [];
+    for (let i = 0; i < reps; i++) { out.push({ sec: on, lvl }); if (off && i < reps - 1) out.push({ sec: off, lvl: 0.5, rec: true }); }
+    if (off && /allungh/.test(txt)) out.push({ sec: off, lvl: 0.5, rec: true });
+    return out;
+  }
+  if ((m = txt.match(/^\s*(\d+) allunghi/))) { const out = []; for (let i = 0; i < +m[1]; i++) { out.push({ sec: 20, lvl: 1.15 }); out.push({ sec: 60, lvl: 0.5, rec: true }); } return out; }
+  if ((m = txt.match(/^\s*~?(\d+)h(\d+)?/))) return [{ sec: (+m[1] * 60 + (+m[2] || 0)) * 60, lvl: levelOf(txt) }];
+  if ((m = txt.match(/^\s*~?(?:\d+-)?(\d+)(['"])/))) return [{ sec: toSec(m[1], m[2]), lvl: levelOf(txt) }];
+  return null;
+}
+
+// split prose into display steps + notes; also build the full profile
+function analyse(p) {
+  const hide = s => /rilancia|--ftp|--pace|script/i.test(s);
+  const steps = [], notes = [], ex = [];
+  const tokens = String(p.details || "").split(/\s*→\s*|\n/).map(s => s.trim()).filter(Boolean);
+  for (let tok of tokens) {
+    if (/^([A-D]\d?|Core:|Prima:)\s/.test(tok)) { tok.split(/\s*\|\s*/).forEach(x => { const mm = x.match(/^([A-D]\d?|Core|Prima):?\s+(.*)$/); ex.push(mm ? [mm[1], mm[2]] : ["", x]); }); continue; }
+    if (/^Mobilit/.test(tok)) { notes.push(tok); continue; }
+    const sentences = tok.split(/\.\s+(?=[A-ZÀ-Ý0-9~])/).map(s => s.replace(/\.$/, "").trim()).filter(Boolean);
+    let head = sentences.shift();
+    sentences.forEach(s => { if (!hide(s)) notes.push(s); });
+    // "Label: 20' Z1-Z2 + 3x1' agili, 5' Z1, ..." → one step per item
+    const lm = head.match(/^([A-Za-zÀ-ÿ' ]{3,40}):\s*(\d.*)$/);
+    if (lm && /,/.test(lm[2]) && !/\dh/.test(lm[1])) { notes.unshift(lm[1]); lm[2].split(/,\s*|\s\+\s/).forEach(x => steps.push(x.trim())); continue; }
+    // long ride: "3h15: Z2 (...); nell'ultima ora 2x15' @ ... rec 5'"  /  "3h: 2h40 Z2 (...) poi ultimi 20' tempo @ ..."
+    const lh = head.match(/^(\d+)h(\d+)?:\s*(.*)$/);
+    if (lh) {
+      const tot = (+lh[1] * 60 + (+lh[2] || 0)) * 60; const rest = lh[3];
+      const last = rest.match(/nell'ultima ora (.*)$/), fin = rest.match(/(?:poi )?ultimi (\d+)' (.*)$/);
+      if (last) { steps.push({ label: fmtDur(tot - 3600), txt: rest.split(/;\s*nell'ultima ora/)[0], segs: [{ sec: tot - 3600, lvl: levelOf(rest.split(";")[0]) }] });
+        const blk = segmentsOf(last[1]) || []; const used = blk.reduce((a, b) => a + b.sec, 0);
+        const pre = Math.max(0, 3600 - used - 600);
+        steps.push({ label: "ultima ora", txt: `${fmtDur(pre)} Z2 → ${last[1]} → ${fmtDur(3600 - used - pre)} Z2 per chiudere`, segs: [{ sec: pre, lvl: 0.68 }, ...blk, { sec: 3600 - used - pre, lvl: 0.68 }] });
+        continue; }
+      if (fin) { const n = +fin[1] * 60;
+        steps.push({ label: fmtDur(tot - n), txt: rest.split(/\s+poi\s+|;/)[0].replace(/^\d+h\d*\s*/, ""), segs: [{ sec: tot - n, lvl: 0.68 }] });
+        steps.push({ label: fmtDur(n), txt: fin[2], segs: [{ sec: n, lvl: levelOf(fin[2]) }] }); continue; }
+    }
+    head.split(/\s\+\s(?=\d)/).forEach(x => steps.push(x));
+  }
+  // normalise steps → {label, txt, rec, segs}
+  const out = steps.map(s => {
+    if (typeof s === "object") return s;
+    s = s.replace(/^ultimi\s+(\d+)'\s*/i, "$1' finale ");
+    const segs = segmentsOf(s);
+    const recM = s.match(/,?\s*\b(?:rec|con)\s+(\d+['"][^,]*|discesa[^,]*)/); const rec = recM && recM[1];
+    const rm = s.match(/^\s*(~?(?:\d+-)?\d+h\d*|~?(?:\d+-)?\d+['"]|\d+\s*x\s*\d+['"]|\d+ serie)/);
+    let label = rm ? rm[1].replace(/\s*x\s*/, "×") : "";
+    let txt = rm ? s.slice(rm[0].length).trim() : s;
+    if (/^\d+ allunghi/.test(s)) { label = `${s.match(/^(\d+)/)[1]}×20"`; txt = "Allunghi progressivi"; }
+    if (/serie x/.test(s)) { const m2 = s.match(/(\d+) serie x \((\d+) x (\d+)"/); label = `${m2[1]}×`; txt = `serie da ${m2[2]} × (30" forte / 15" facile)` + (s.match(/@ ([^/]+)/) ? `, i 30" a ${s.match(/@ ([^/]+)/)[1].trim()}` : ""); }
+    if (recM) txt = txt.replace(recM[0], "");
+    txt = txt.replace(/^@\s*/, "a ").trim();
+    let recTxt = null;
+    if (/serie x/.test(s)) recTxt = `15" facili tra le ripetizioni · ${(s.match(/(\d+)' tra le serie/) || [0, 3])[1]}' Z1 tra le serie`;
+    else if (rec) recTxt = rec.trim().replace(/^(\d+['"])\s*/, "$1 ").replace(/\s+$/, "");
+    return { label, txt: txt.charAt(0).toUpperCase() + txt.slice(1), rec: recTxt, segs };
+  });
+  const allSegs = out.every(o => o.segs && o.segs.length) ? out.flatMap(o => o.segs) : null;
+  return { steps: out, notes, ex, segs: allSegs };
+}
+
+function profileSVG(segs) {
+  const total = segs.reduce((a, s) => a + s.sec, 0); if (!total) return "";
+  const W = 640, H = 120, top = 8, base = H - 18;
+  const hOf = l => Math.max(8, Math.min(1.35, l) / 1.35 * (base - top));
+  let x = 0; const used = new Set();
+  const rects = segs.map(s => { const w = s.sec / total * W; const z = ZONE_OF(s.lvl); used.add(z); const h = hOf(s.lvl);
+    const r = `<rect x="${x.toFixed(2)}" y="${(base - h).toFixed(1)}" width="${Math.max(w - (w > 3 ? 0.6 : 0), 0.4).toFixed(2)}" height="${h.toFixed(1)}" rx="1.5" fill="var(${ZCOL[z]})"${s.rec ? ' opacity=".75"' : ""}></rect>`; x += w; return r; }).join("");
+  const stepMin = total > 7200 ? 30 : total > 3600 ? 15 : 10; let ticks = "";
+  for (let m = 0; m * 60 <= total; m += stepMin) { const tx = m * 60 / total * W; ticks += `<text class="axis" x="${Math.min(tx, W - 14).toFixed(1)}" y="${H - 4}" text-anchor="${m === 0 ? "start" : "middle"}">${m >= 60 ? `${Math.floor(m/60)}h${m%60 ? pad(m%60) : ""}` : m + "'"}</text>`; }
+  const thrY = (base - hOf(1)).toFixed(1);
+  const legend = [...used].sort().map(z => `<span><i class="sq" style="background:var(${ZCOL[z]})"></i>${ZONE_NAMES[z]}</span>`).join("");
+  return `<div class="profile" aria-label="Profilo della seduta, durata ${fmtDur(total)}"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"><line x1="0" x2="${W}" y1="${thrY}" y2="${thrY}" stroke="var(--faint)" stroke-dasharray="3 4" stroke-width="1"></line>${rects}${ticks}</svg><div class="pleg">${legend}<span style="margin-left:auto">- - - soglia · totale ${fmtDur(total)}</span></div></div>`;
+}
+
+let sessReturnFocus = null;
+function openSession(id, from) {
+  const p = state.plan.find(x => x.id === id); if (!p) return;
+  sessReturnFocus = from || null;
+  const d = parseISO(String(p.d).slice(0, 10)); const color = sportColor(p.sport);
+  const a = analyse(p);
+  const chips = [SPORT_LABEL[p.sport] || p.sport, p.dur ? hm(p.dur * 60).replace(/^0:/, "") + (p.dur < 60 ? "'" : " h") : null]
+    .filter(Boolean).map(c => `<span class="chip">${esc(c)}</span>`).join("") +
+    (p.intensity && p.intensity !== "rest" ? `<span class="chip int-${esc(p.intensity)}">${esc(INT_LABEL[p.intensity] || p.intensity)}</span>` : "") +
+    (p.status && p.status !== "planned" ? `<span class="chip">${esc(p.status)}</span>` : "");
+  const stepsHtml = a.steps.length ? `<section><h3>Cosa fare</h3><ol class="steps">${a.steps.map(s => {
+      const lv = s.segs && s.segs.length ? Math.max(...s.segs.filter(x => !x.rec).map(x => x.lvl).concat([0])) : null;
+      const bc = !["bike", "run", "brick"].includes(p.sport) ? color : lv != null ? `var(${ZCOL[ZONE_OF(lv)]})` : "var(--line)";
+      return `<li class="step" style="border-left-color:${bc}"><span class="dur">${esc(s.label || "•")}</span><div class="txt">${esc(s.txt)}${s.rec ? `<br><span class="rec">Recupero: ${esc(s.rec)}</span>` : ""}</div></li>`; }).join("")}</ol></section>` : "";
+  const exHtml = a.ex.length ? `<section><h3>Esercizi</h3><div class="exs">${a.ex.map(([k, t]) => `<div class="ex"><b>${esc(k)}</b><span>${esc(t)}</span></div>`).join("")}</div></section>` : "";
+  const prof = a.segs && ["bike", "run", "brick"].includes(p.sport) ? profileSVG(a.segs) : "";
+  const whyHtml = p.purpose ? `<section><h3>Perché e come</h3><div class="why">${String(p.purpose).split("\n").filter(Boolean).map(line => {
+      const m = line.match(/^([^:]{3,40}):\s*(.*)$/); return m ? `<p><b>${esc(m[1])}</b>${esc(m[2].charAt(0).toUpperCase() + m[2].slice(1))}</p>` : `<p>${esc(line)}</p>`; }).join("")}</div></section>` : "";
+  const notesHtml = a.notes.length ? `<section><h3>Note</h3><ul class="notes">${a.notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul></section>` : "";
+  const e = byDay[String(p.d).slice(0, 10)] || { acts: [] };
+  const same = e.acts.filter(x => { const sp = sportOf(x.st); return p.sport === "brick" ? sp === "run" : sp === p.sport || (p.sport === "strength" && sp !== "bike" && sp !== "run" && sp !== "swim"); });
+  const doneHtml = same.length ? `<div class="done-box"><b>Fatto su Strava:</b> ${same.map(x => { const l = actLine(x); return `${esc(l.title)} · ${esc(l.meta)}`; }).join("<br>")}</div>` : "";
+  $("sessModal").innerHTML = `
+    <div class="sess-head">
+      <div><div class="eyebrow" style="color:${color}">${DOW_L[(d.getDay()+6)%7]} ${d.getDate()} ${MONTHS[d.getMonth()]}</div>
+        <h2 id="sessTitle">${esc(p.title)}</h2><div class="chips">${chips}</div></div>
+      <button class="btn" id="sessClose">Chiudi</button>
+    </div>
+    ${doneHtml}${prof}${stepsHtml}${exHtml}${notesHtml}${whyHtml}
+    ${!stepsHtml && !exHtml && !whyHtml && p.details ? `<p>${esc(p.details)}</p>` : ""}`;
+  $("sessOverlay").hidden = false;
+  $("sessClose").onclick = closeSession;
+  $("sessClose").focus();
+}
+function closeSession() { $("sessOverlay").hidden = true; if (sessReturnFocus && document.body.contains(sessReturnFocus)) sessReturnFocus.focus(); }
 
 // ---------- data (Supabase Edge Function "dashboard-api", protetta da PIN) ----------
 const API = "https://kfqpazrtwhzheualsctu.supabase.co/functions/v1/dashboard-api";
@@ -736,7 +930,8 @@ const openBig = () => { state.bigOffset = state.monthOffset; state.selectedDay =
 $("openCal").onclick = openBig; $("calClick").onclick = openBig;
 $("closeCal").onclick = () => { $("overlay").hidden = true; };
 $("overlay").addEventListener("click", e => { if (e.target.id === "overlay") $("overlay").hidden = true; });
-document.addEventListener("keydown", e => { if (e.key === "Escape") $("overlay").hidden = true; });
+document.addEventListener("keydown", e => { if (e.key !== "Escape") return; if (!$("sessOverlay").hidden) closeSession(); else $("overlay").hidden = true; });
+$("sessOverlay").addEventListener("click", e => { if (e.target.id === "sessOverlay") closeSession(); });
 $("mPrev").onclick = () => { state.bigOffset--; renderBig(); };
 $("mNext").onclick = () => { state.bigOffset++; renderBig(); };
 $("mToday").onclick = () => { state.bigOffset = 0; renderBig(); };
