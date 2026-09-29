@@ -151,6 +151,8 @@ button{cursor:pointer}
 .item{display:flex;gap:6px;align-items:flex-start;font-size:12.5px;line-height:1.3}
 .item .sq{margin-top:3px}
 .item.planned .sq{background:transparent!important;border:2px solid currentColor}
+.item.done .sq{background:currentColor}
+.item.done .meta{color:var(--ok)}
 .item .meta{color:var(--muted);font-family:var(--mono);font-size:11.5px}
 .item .t{font-weight:500;overflow-wrap:anywhere}
 .none{font-size:12px;color:var(--faint)}
@@ -267,7 +269,7 @@ button.item .more{display:block;font-size:11px;color:var(--accent);margin-top:2p
     <div class="panel-head">
       <div class="totals" id="weekTotals"></div>
       <div class="legend">
-        <span><i class="sq" style="background:var(--muted)"></i>Fatto (Strava)</span>
+        <span><i class="sq" style="background:var(--muted)"></i>Fatto</span>
         <span><i class="sq o"></i>Pianificato</span>
       </div>
     </div>
@@ -602,10 +604,12 @@ function actLine(a) {
   if (a.hr) bits.push(`${Math.round(a.hr)} bpm`);
   return { sp, title: a.n || SPORT_LABEL[sp], meta: bits.join(" · ") };
 }
+const STATUS_LABEL = { done: "✓ fatto", skipped: "saltato", moved: "spostato" };
 function planLine(p) {
   const bits = [];
   if (p.dur) bits.push(hm(p.dur*60));
   if (p.intensity) bits.push(p.intensity);
+  if (STATUS_LABEL[p.status]) bits.push(STATUS_LABEL[p.status]);
   return { sp: p.sport, title: p.title, meta: bits.join(" · "), details: p.details };
 }
 
@@ -622,7 +626,9 @@ function renderWeek() {
     const d = addDays(mon, i), k = iso(d), e = byDay[k] || { acts: [], plan: [] };
     const items = [];
     e.plan.forEach(p => { const l = planLine(p); planned += (p.dur || 0) * 60;
-      items.push(`<button type="button" class="item planned" data-pid="${p.id}" style="color:${sportColor(l.sp)}" aria-label="Dettaglio: ${esc(l.title)}"><i class="sq"></i><div><div class="t" style="color:var(--ink)">${esc(l.title)}</div>${l.meta ? `<div class="meta">${esc(l.meta)}</div>` : ""}</div></button>`); });
+      if (p.status === "done" && !(e.acts || []).some(a => { const sp = sportOf(a.st); return sp === p.sport || (p.sport === "brick" && sp === "run"); }))
+        tot[p.sport === "bike" ? "bike" : p.sport === "run" || p.sport === "brick" ? "run" : p.sport === "swim" ? "swim" : "other"] += (p.dur || 0) * 60;
+      items.push(`<button type="button" class="item${p.status === "done" ? " done" : " planned"}" data-pid="${p.id}" style="color:${sportColor(l.sp)}" aria-label="Dettaglio: ${esc(l.title)}"><i class="sq"></i><div><div class="t" style="color:var(--ink)">${esc(l.title)}</div>${l.meta ? `<div class="meta">${esc(l.meta)}</div>` : ""}</div></button>`); });
     e.acts.forEach(a => { const l = actLine(a); tot[l.sp === "strength" ? "other" : l.sp] = (tot[l.sp === "strength" ? "other" : l.sp] || 0) + (a.s || 0);
       items.push(`<div class="item"><i class="sq" style="background:${sportColor(l.sp)}"></i><div><div class="t">${esc(l.title)}</div><div class="meta">${esc(l.meta)}</div></div></div>`); });
     html += `<div class="day${k === todayIso ? " today" : ""}"><div class="day-h"><b>${DOW[i]}</b><span>${d.getDate()} ${MON_S[d.getMonth()]}</span></div>${items.join("") || `<span class="none">${k > todayIso ? "Nessuna sessione pianificata" : "—"}</span>`}</div>`;
@@ -826,7 +832,7 @@ function openSession(id, from) {
   const chips = [SPORT_LABEL[p.sport] || p.sport, p.dur ? hm(p.dur * 60).replace(/^0:/, "") + (p.dur < 60 ? "'" : " h") : null]
     .filter(Boolean).map(c => `<span class="chip">${esc(c)}</span>`).join("") +
     (p.intensity && p.intensity !== "rest" ? `<span class="chip int-${esc(p.intensity)}">${esc(INT_LABEL[p.intensity] || p.intensity)}</span>` : "") +
-    (p.status && p.status !== "planned" ? `<span class="chip">${esc(p.status)}</span>` : "");
+    (p.status && p.status !== "planned" ? `<span class="chip"${p.status === "done" ? ' style="color:var(--ok);border-color:currentColor"' : ""}>${esc(STATUS_LABEL[p.status] || p.status)}</span>` : "");
   const stepsHtml = a.steps.length ? `<section><h3>Cosa fare</h3><ol class="steps">${a.steps.map(s => {
       const lv = s.segs && s.segs.length ? Math.max(...s.segs.filter(x => !x.rec).map(x => x.lvl).concat([0])) : null;
       const bc = !["bike", "run", "brick"].includes(p.sport) ? color : lv != null ? `var(${ZCOL[ZONE_OF(lv)]})` : "var(--line)";
