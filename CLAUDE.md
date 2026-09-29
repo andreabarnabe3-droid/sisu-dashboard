@@ -37,3 +37,11 @@ Ordine: settimana → calendario mensile → in fondo Soglie (FTP/passo/LTHR) e 
 - Km = somma distanze in `activities_dedup` (vista che scarta i doppioni Garmin/Bryton/Edge) dal `since_date`, filtrati per sport e rulli/strada.
 - Rulli = VirtualRide oppure attività senza GPS (`start_latlng` vuoto). Strava non ha gear assegnato alle attività.
 - `gear_status()` è inclusa in `dashboard_load()`; la pagina aggiorna con POST `?action=gear` → `dashboard_gear_update(id, date, limit, reset)`.
+
+## intervals.icu → Garmin (corse)
+Athlete i732140. API key nel Supabase Vault (`intervals_api_key`), mai nel codice.
+`public.intervals_call(method, path, body jsonb)` (estensione `http`, solo service_role) chiama `https://intervals.icu` con Basic auth.
+Le corse del piano (run + brick) sono eventi WORKOUT con `external_id = plan_q4_2026:<data>:<slot>`; upload con
+`POST /api/v1/athlete/i732140/events/bulk?upsert=true`. intervals.icu li spedisce a Garmin Connect (7 giorni avanti) → Instinct 2 Solar.
+Target FC in `% LTHR` (LTHR corsa impostata su intervals: 160); `bpm` assoluti NON sono interpretati dal parser.
+Generatore: `intervals_export.py` (fuori repo) legge `piano_q4_2026.csv`.
