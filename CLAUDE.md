@@ -31,3 +31,9 @@ Il sorgente è in `supabase/functions/dashboard-api/index.ts`; si pubblica con l
 
 ## Layout (richiesto da Andrea, 29/09/2026)
 Ordine: settimana → calendario mensile → in fondo Soglie (FTP/passo/LTHR) e Obiettivo 5h30 affiancati. Le tabelle delle zone sono chiuse in un menu a tendina ("Mostra zone").
+
+## Materiale (scarpe e catene) — aggiunto 29/09/2026
+- Tabella `gear` (name, kind shoes|chain, sports text[], indoor null|true|false, since_date, limit_km, action_label) + storico `gear_events`.
+- Km = somma distanze in `activities_dedup` (vista che scarta i doppioni Garmin/Bryton/Edge) dal `since_date`, filtrati per sport e rulli/strada.
+- Rulli = VirtualRide oppure attività senza GPS (`start_latlng` vuoto). Strava non ha gear assegnato alle attività.
+- `gear_status()` è inclusa in `dashboard_load()`; la pagina aggiorna con POST `?action=gear` → `dashboard_gear_update(id, date, limit, reset)`.

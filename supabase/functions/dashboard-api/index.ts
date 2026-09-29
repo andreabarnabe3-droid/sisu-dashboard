@@ -57,6 +57,16 @@ Deno.serve(async (req) => {
       if (error) throw error;
       return json(req, { settings: data });
     }
+    if (req.method === "POST" && action === "gear") {
+      const b = await req.json();
+      const id = Number(b?.id);
+      if (!Number.isInteger(id)) return json(req, { error: "bad_request", message: "id obbligatorio." }, 400);
+      const date = typeof b?.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(b.date) ? b.date : null;
+      const limit = b?.limit_km == null ? null : Number(b.limit_km);
+      const { data, error } = await supabase.rpc("dashboard_gear_update", { p_id: id, p_date: date, p_limit: limit, p_reset: !!b?.reset });
+      if (error) throw error;
+      return json(req, { gear: data });
+    }
     return json(req, { error: "not_found", message: "Azione sconosciuta." }, 404);
   } catch (e) {
     console.error("dashboard-api error", e);

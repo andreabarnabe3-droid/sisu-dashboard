@@ -138,6 +138,22 @@ button{cursor:pointer}
 .total .big{font-family:var(--display);font-size:34px;font-weight:700;line-height:1}
 .pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid currentColor}
 .pill.ok{color:var(--ok)} .pill.bad{color:var(--bad)}
+/* gear */
+.gear{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.gi{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface-2);display:flex;flex-direction:column;gap:8px}
+.gi-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.gi-h b{font-weight:600}
+.gi-h .pill{font-size:11px;white-space:nowrap}
+.pill.warn{color:var(--warn)}
+.gi .km{font-family:var(--display);font-size:28px;font-weight:700;line-height:1}
+.gi .km small{font-family:var(--body);font-size:13px;font-weight:500;color:var(--muted);margin-left:4px}
+.meter{height:8px;border-radius:999px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;border-radius:999px}
+.gi .sub{font-size:12px;color:var(--muted)}
+.gi details summary{cursor:pointer;font-size:12.5px;color:var(--accent);font-weight:600}
+.gi form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px;font-size:12.5px;color:var(--muted)}
+.gi form input{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:4px 6px;font-family:var(--mono);font-size:13px}
+.gi form input[type=number]{width:6ch}
 
 /* week */
 .week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
@@ -293,6 +309,12 @@ button.item .more{display:block;font-size:11px;color:var(--accent);margin-top:2p
     </div>
   </section>
 
+  <!-- Materiale -->
+  <section class="panel data" id="gearPanel">
+    <div class="panel-head"><h2>Materiale</h2><span class="eyebrow">km calcolati da Strava</span></div>
+    <div class="gear" id="gear"></div>
+  </section>
+
   <section class="grid-top">
     <!-- Soglie e zone -->
     <article class="panel data" id="zonesPanel">
@@ -374,7 +396,7 @@ const state = {
   settings: { ftp_bike: null, lthr_bike: null, lthr_run: null, cp_run: null,
     race: { name: "IRONMAN 70.3 Alghero", date: "2027-05-30", goal_s: GOAL_DEFAULT, swim_s: 2400, t1_s: 300, bike_s: 10500, t2_s: 180, run_s: 6420 } },
   saved: null,
-  tests: [], acts: [], plan: [], weeks: [],
+  tests: [], acts: [], plan: [], weeks: [], gear: [],
   tab: "bike", weekOffset: 0, monthOffset: 0, bigOffset: 0, selectedDay: null
 };
 
@@ -914,7 +936,7 @@ async function load() {
     const j = await api("load");
     if (j.settings) state.settings = Object.assign({}, state.settings, j.settings, { race: Object.assign({}, state.settings.race, j.settings.race || {}) });
     state.saved = JSON.parse(JSON.stringify(state.settings));
-    state.tests = j.tests || []; state.acts = j.acts || []; state.plan = j.plan || []; state.weeks = j.weeks || [];
+    state.tests = j.tests || []; state.acts = j.acts || []; state.plan = j.plan || []; state.weeks = j.weeks || []; state.gear = j.gear || [];
     state.online = true; showBanner("");
     const last = j.last;
     setStatus("ok", `Strava sincronizzato · ${state.acts.length} attività negli ultimi 6 mesi${last ? ` · ultima: <b>${esc(last.n)}</b>, ${fmtDate(String(last.at).slice(0,10))}` : ""} · <button class="btn" id="logout" style="padding:1px 8px;font-size:12px">Esci</button>`);
@@ -929,7 +951,49 @@ async function load() {
     renderAll();
   }
 }
-function renderAll() { indexByDay(); renderCountdown(); renderZones(); renderRace(); renderWeek(); renderMini(); if (!$("overlay").hidden) renderBig(); }
+function renderAll() { renderGear(); indexByDay(); renderCountdown(); renderZones(); renderRace(); renderWeek(); renderMini(); if (!$("overlay").hidden) renderBig(); }
+
+
+// ---------- materiale ----------
+function renderGear() {
+  const box = $("gear"); if (!box) return;
+  if (!state.gear.length) { box.innerHTML = `<span class="none">${state.online ? "Nessun materiale registrato." : "Dati non caricati."}</span>`; return; }
+  const today = iso(new Date());
+  box.innerHTML = state.gear.map(g => {
+    const km = Number(g.km) || 0, lim = Number(g.limit_km) || 1, pct = km / lim;
+    const noDate = !g.since_date;
+    const st = noDate ? ["warn", "Data da inserire"] : pct >= 1 ? ["bad", g.kind === "shoes" ? "Da sostituire" : "Da oliare"] : pct >= 0.8 ? ["warn", "Quasi al limite"] : ["ok", "Ok"];
+    const col = st[0] === "ok" ? "var(--ok)" : st[0] === "warn" ? "var(--warn)" : "var(--bad)";
+    const left = lim - km;
+    const since = noDate ? "Registra la data dell'ultima manutenzione" :
+      `${g.kind === "shoes" ? "Dal" : "Ultima volta:"} ${fmtDate(g.since_date, true)} · ${g.n} uscite · ${left >= 0 ? `ancora ${Math.round(left)} km` : `${Math.round(-left)} km oltre`}`;
+    return `<div class="gi">
+      <div class="gi-h"><b>${esc(g.name)}</b><span class="pill ${st[0]}">${st[1]}</span></div>
+      <div class="km num">${noDate ? "—" : km.toFixed(0)}<small>/ ${Math.round(lim)} km</small></div>
+      <div class="meter" role="img" aria-label="${Math.round(pct*100)}% del limite"><i style="width:${noDate ? 0 : Math.min(100, pct*100).toFixed(1)}%;background:${col}"></i></div>
+      <div class="sub">${esc(since)}</div>
+      <details><summary>${esc(g.action_label)} / modifica limite</summary>
+        <form data-id="${g.id}">
+          <label>Data <input type="date" name="date" value="${today}" max="${today}"></label>
+          <button class="btn primary" name="reset" value="1" type="submit">${esc(g.action_label)}</button>
+          <label>Limite <input type="number" name="limit" min="10" max="5000" step="10" value="${Math.round(lim)}"> km</label>
+          <button class="btn" name="lim" value="1" type="submit">Salva limite</button>
+          <span class="msg" style="flex-basis:100%"></span>
+        </form>
+      </details>
+    </div>`;
+  }).join("");
+  box.querySelectorAll("form").forEach(f => f.addEventListener("submit", async e => {
+    e.preventDefault();
+    const btn = e.submitter, msg = f.querySelector(".msg"), reset = btn && btn.name === "reset";
+    const body = { id: Number(f.dataset.id), reset };
+    if (reset) body.date = f.date.value; else body.limit_km = Number(f.limit.value);
+    if (!state.online) { msg.className = "msg bad"; msg.textContent = "Dati non collegati."; return; }
+    btn.disabled = true; msg.className = "msg"; msg.textContent = "Salvataggio…";
+    try { const r = await api("gear", body); state.gear = r.gear || state.gear; renderGear(); }
+    catch (err) { msg.className = "msg bad"; msg.innerHTML = errorCopy(err); btn.disabled = false; }
+  }));
+}
 
 // ---------- saves ----------
 $("saveThr").onclick = async () => {

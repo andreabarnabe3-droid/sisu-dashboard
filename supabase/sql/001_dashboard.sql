@@ -6,3 +6,4 @@ create table if not exists public.planned_sessions (id bigserial primary key, se
 -- dashboard_load(), dashboard_save_thresholds(jsonb, date), dashboard_save_race(jsonb): vedi migrazione "dashboard_api_functions" su Supabase.
 create table if not exists public.plan_weeks (week_start date primary key check (extract(isodow from week_start) = 1), kind text not null check (kind in ('carico','scarico','test','transizione')), label text not null, focus text, block int, source text default 'manual', created_at timestamptz not null default now());
 -- dashboard_load() restituisce anche 'weeks' (migrazione "plan_weeks").
+-- 29/09/2026: tabelle gear, gear_events, vista activities_dedup, funzioni gear_status() e dashboard_gear_update(); 'gear' aggiunto a dashboard_load().
