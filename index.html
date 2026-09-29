@@ -70,7 +70,13 @@ button{cursor:pointer}
 .banner strong{font-weight:600}
 
 /* panels */
-.grid-top{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px}
+.grid-top{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start}
+.zones-toggle{border-top:1px solid var(--line);padding-top:10px}
+.zones-toggle summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:600;color:var(--accent);padding:4px 0}
+.zones-toggle summary::-webkit-details-marker{display:none}
+.zones-toggle .chev{transition:transform .15s}
+.zones-toggle[open] .chev{transform:rotate(180deg)}
+.zones-toggle .zones{margin-top:10px}
 @media (max-width:900px){.grid-top{grid-template-columns:1fr}}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
 .panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
@@ -246,48 +252,6 @@ button.item .more{display:block;font-size:11px;color:var(--accent);margin-top:2p
   <div class="status" id="status"><span class="dot"></span><span>Collegamento ai dati…</span></div>
   <div class="banner" id="banner" hidden></div>
 
-  <section class="grid-top">
-    <!-- Soglie e zone -->
-    <article class="panel data" id="zonesPanel">
-      <div class="panel-head">
-        <h2>Soglie e zone</h2>
-        <div class="seg" role="group" aria-label="Disciplina">
-          <button id="tabBike" aria-pressed="true">Bici</button>
-          <button id="tabRun" aria-pressed="false">Corsa</button>
-        </div>
-      </div>
-      <div class="thresholds" id="thrFields"></div>
-      <div class="save-row">
-        <label for="testDate">Data del test</label>
-        <input type="date" id="testDate">
-        <button class="btn primary" id="saveThr" disabled>Salva soglie</button>
-        <span class="msg" id="thrMsg"></span>
-      </div>
-      <div class="zones" id="zoneTables"></div>
-    </article>
-
-    <!-- Obiettivo gara -->
-    <article class="panel data" id="racePanel">
-      <div class="panel-head">
-        <h2>Obiettivo 5h30</h2>
-        <span class="eyebrow" id="raceDate">30 mag 2027</span>
-      </div>
-      <div class="split-bar" id="splitBar" aria-hidden="true"></div>
-      <div class="legs" id="legs"></div>
-      <div class="trans">
-        <label for="t1">T1 <input class="tin" id="t1" inputmode="numeric"></label>
-        <label for="t2">T2 <input class="tin" id="t2" inputmode="numeric"></label>
-        <span>Formato h:mm:ss o mm:ss</span>
-      </div>
-      <div class="total">
-        <div><div class="eyebrow">Totale pianificato</div><div class="big num" id="totalTime">–</div></div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-          <span class="pill" id="totalPill">–</span>
-          <div class="save-row"><button class="btn primary" id="saveRace" disabled>Salva tempi</button><span class="msg" id="raceMsg"></span></div>
-        </div>
-      </div>
-    </article>
-  </section>
 
   <!-- Settimana -->
   <section class="panel data" id="weekPanel">
@@ -325,6 +289,52 @@ button.item .more{display:block;font-size:11px;color:var(--accent);margin-top:2p
       <span><i class="sq" style="background:var(--other)"></i>Altro</span>
       <span><i class="sq o"></i>Pianificato</span>
     </div>
+  </section>
+
+  <section class="grid-top">
+    <!-- Soglie e zone -->
+    <article class="panel data" id="zonesPanel">
+      <div class="panel-head">
+        <h2>Soglie</h2>
+        <div class="seg" role="group" aria-label="Disciplina">
+          <button id="tabBike" aria-pressed="true">Bici</button>
+          <button id="tabRun" aria-pressed="false">Corsa</button>
+        </div>
+      </div>
+      <div class="thresholds" id="thrFields"></div>
+      <div class="save-row">
+        <label for="testDate">Data del test</label>
+        <input type="date" id="testDate">
+        <button class="btn primary" id="saveThr" disabled>Salva soglie</button>
+        <span class="msg" id="thrMsg"></span>
+      </div>
+      <details class="zones-toggle" id="zonesToggle">
+        <summary><span>Mostra zone</span><span class="chev" aria-hidden="true">▾</span></summary>
+        <div class="zones" id="zoneTables"></div>
+      </details>
+    </article>
+
+    <!-- Obiettivo gara -->
+    <article class="panel data" id="racePanel">
+      <div class="panel-head">
+        <h2>Obiettivo 5h30</h2>
+        <span class="eyebrow" id="raceDate">30 mag 2027</span>
+      </div>
+      <div class="split-bar" id="splitBar" aria-hidden="true"></div>
+      <div class="legs" id="legs"></div>
+      <div class="trans">
+        <label for="t1">T1 <input class="tin" id="t1" inputmode="numeric"></label>
+        <label for="t2">T2 <input class="tin" id="t2" inputmode="numeric"></label>
+        <span>Formato h:mm:ss o mm:ss</span>
+      </div>
+      <div class="total">
+        <div><div class="eyebrow">Totale pianificato</div><div class="big num" id="totalTime">–</div></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <span class="pill" id="totalPill">–</span>
+          <div class="save-row"><button class="btn primary" id="saveRace" disabled>Salva tempi</button><span class="msg" id="raceMsg"></span></div>
+        </div>
+      </div>
+    </article>
   </section>
 </div>
 
@@ -950,6 +960,7 @@ $("saveRace").onclick = async () => {
 };
 
 // ---------- wiring ----------
+$("zonesToggle").addEventListener("toggle", e => { e.target.querySelector("summary span").textContent = e.target.open ? "Nascondi zone" : "Mostra zone"; });
 $("tabBike").onclick = () => { state.tab = "bike"; renderZones(); };
 $("tabRun").onclick = () => { state.tab = "run"; renderZones(); };
 $("wPrev").onclick = () => { state.weekOffset--; renderWeek(); };
