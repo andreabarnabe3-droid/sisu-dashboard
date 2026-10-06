@@ -43,5 +43,6 @@ Athlete i732140. API key nel Supabase Vault (`intervals_api_key`), mai nel codic
 `public.intervals_call(method, path, body jsonb)` (estensione `http`, solo service_role) chiama `https://intervals.icu` con Basic auth.
 Le corse del piano (run + brick) sono eventi WORKOUT con `external_id = plan_q4_2026:<data>:<slot>`; upload con
 `POST /api/v1/athlete/i732140/events/bulk?upsert=true`. intervals.icu li spedisce a Garmin Connect (7 giorni avanti) → Instinct 2 Solar.
-Target FC in `% LTHR` (LTHR corsa impostata su intervals: 160); `bpm` assoluti NON sono interpretati dal parser.
+Target FC in `% LTHR` (LTHR corsa impostata su intervals: 157, FC max 180); `bpm` assoluti NON sono interpretati dal parser.
+Target corsa allineati alle zone Friel: facile = Z2 85-89% LTHR (≤140 bpm, deciso da Andrea 06/10/2026), medio 92-96%, sotto-soglia 95-98%.
 Generatore: `intervals_export.py` (fuori repo) legge `piano_q4_2026.csv`.
