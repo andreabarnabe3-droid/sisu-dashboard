@@ -597,7 +597,7 @@ function renderRaceTotals() {
   const scale = Math.max(tot, totNow || 0);
   const bar = src => parts.map(([k, c, lbl]) => {
     const w = (src[k] / scale * 100);
-    return `<div class="${c ? "" : "t"}" style="flex:0 0 calc(${w.toFixed(2)}% - 2px);${c ? `background:${c}` : ""}" title="${lbl} ${hms(src[k], true)}">${c && w > 12 ? hm(src[k]) : ""}</div>`;
+    return `<div class="${c ? "" : "t"}" style="flex:0 0 calc(${w.toFixed(2)}% - 2px);${c ? `background:${c}` : ""}" title="${lbl} ${hms(src[k], true)}">${c && w > 6 ? `<span${w < 12 ? ' style="font-size:12px"' : ""}>${hm(src[k])}</span>` : ""}</div>`;
   }).join("");
   $("splitBar").innerHTML = bar(r);
   $("barTot").textContent = hm(tot);
