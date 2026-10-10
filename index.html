@@ -94,6 +94,15 @@ button{cursor:pointer}
 .field .unit{color:var(--muted);font-size:13px}
 .field .hint{font-size:11.5px;color:var(--faint)}
 .field.missing{border-style:dashed}
+.field .tgt{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;border-top:1px dashed var(--line);padding-top:6px;margin-top:2px;font-size:12px;color:var(--muted)}
+.field .tgt:empty{display:none}
+.field .tgt b{color:var(--ink);font-weight:500}
+.field .tgt .pill{font-size:10.5px;padding:1px 6px}
+.field .tgt .tgt-sub{flex-basis:100%;font-size:11.5px;color:var(--faint)}
+.tgt-how{grid-column:1/-1;font-size:12.5px;color:var(--muted)}
+.tgt-how summary{cursor:pointer;color:var(--accent);font-weight:600}
+.tgt-how p{margin:6px 0 0;max-width:70ch}
+
 .save-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
 .save-row input[type=date]{background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:4px 6px}
 .btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 12px;font-weight:500}
@@ -503,16 +512,17 @@ function renderZones() {
     return `<div class="field${v == null || v === "" ? " missing" : ""}">
       <label for="in_${k}">${label}</label>
       <div class="row"><input id="in_${k}" data-k="${k}" ${isPace ? `type="text" inputmode="numeric" style="width:4.6ch" placeholder="m:ss"` : `type="number" inputmode="numeric" min="30" max="700" placeholder="—"`} value="${shown}"><span class="unit">${unit}</span></div>
-      <span class="hint">${esc(lastTxt)}</span></div>`;
-  }).join("");
+      <span class="hint">${esc(lastTxt)}</span>
+      <div class="tgt" id="tgt_${k}"></div></div>`;
+  }).join("") + `<details class="tgt-how"><summary>Come sono calcolati i target 5h30</summary><div id="tgtHow"></div></details>`;
   $("thrFields").querySelectorAll("input").forEach(inp => inp.addEventListener("input", () => {
     let n;
     if (inp.dataset.k === "pace_run") { n = inp.value.trim() === "" ? null : parseTime(inp.value); inp.style.color = inp.value && n == null ? "var(--bad)" : ""; if (inp.value && n == null) return; }
     else n = inp.value === "" ? null : Number(inp.value);
     state.settings[inp.dataset.k] = Number.isFinite(n) ? n : null;
-    renderZoneTables(); updateThrDirty();
+    renderZoneTables(); updateThrDirty(); updateTargets();
   }));
-  renderZoneTables(); updateThrDirty();
+  renderZoneTables(); updateThrDirty(); updateTargets();
 }
 function renderZoneTables() {
   $("zoneTables").innerHTML = state.tab === "bike" ? zoneTable("bikePower") + zoneTable("bikeHR")
@@ -579,6 +589,7 @@ function renderRaceTotals() {
   pill.className = "pill " + (d <= 0 ? "ok" : "bad");
   pill.textContent = d === 0 ? "In linea con 5:30:00" : d < 0 ? `${hms(-d)} di margine su 5:30` : `${hms(d)} oltre 5:30`;
   $("cdGoal").textContent = hm(goal);
+  updateTargets();
   const dirty = state.saved && JSON.stringify(state.saved.race) !== JSON.stringify(r);
   $("saveRace").disabled = !state.online || !dirty;
   if (dirty) { $("raceMsg").className = "msg"; $("raceMsg").textContent = "Modifiche non salvate"; }
@@ -953,6 +964,41 @@ async function load() {
 }
 function renderAll() { renderGear(); indexByDay(); renderCountdown(); renderZones(); renderRace(); renderWeek(); renderMini(); if (!$("overlay").hidden) renderBig(); }
 
+
+
+// ---------- target per chiudere in 5h30 ----------
+// Bici: riferimento reale = staffetta Alghero 2026, 2:50:42 a NP 170 W. Potenza ~ velocità^2,5 sul percorso misto.
+// Corsa: nel 70.3 si corre ~10% più lenti del passo soglia (8–12%); la potenza di corsa scala con la velocità.
+const REF_BIKE = { s: 10242, np: 170 }, BIKE_IF = [0.80, 0.82, 0.85], RUN_F = [1.08, 1.10, 1.12];
+function raceTargets() {
+  const r = state.settings.race, st = state.settings, t = {};
+  const np = REF_BIKE.np * Math.pow(REF_BIKE.s / r.bike_s, 2.5);
+  t.np = np; t.ftp = np / BIKE_IF[1]; t.ftpLo = np / BIKE_IF[2]; t.ftpHi = np / BIKE_IF[0];
+  if (st.ftp_bike > 0) t.bikeProj = REF_BIKE.s * Math.pow(REF_BIKE.np / (st.ftp_bike * BIKE_IF[1]), 1 / 2.5);
+  const racePace = r.run_s / (DIST.run / 1000);
+  t.racePace = racePace; t.pace = racePace / RUN_F[1]; t.paceLo = racePace / RUN_F[2]; t.paceHi = racePace / RUN_F[0];
+  if (st.cp_run > 0 && st.pace_run > 0) t.cp = st.cp_run * (st.pace_run / t.pace);
+  return t;
+}
+function gapPill(diff, fmt, better) {
+  if (diff == null || !isFinite(diff)) return "";
+  const ok = better ? diff >= 0 : diff <= 0;
+  return `<span class="pill ${ok ? "ok" : "bad"}">${ok ? "raggiunto" : "mancano " + fmt(Math.abs(diff))}</span>`;
+}
+function updateTargets() {
+  const t = raceTargets(), st = state.settings, r = state.settings.race;
+  const set = (k, html) => { const el = $("tgt_" + k); if (el) el.innerHTML = html; };
+  set("ftp_bike", `<span>Target 5h30 <b class="num">${Math.round(t.ftp)} W</b></span>${st.ftp_bike > 0 ? gapPill(st.ftp_bike - t.ftp, v => Math.round(v) + " W", true) : ""}` +
+    (t.bikeProj ? `<span class="tgt-sub">Con ${st.ftp_bike} W: bici in ~${hm(t.bikeProj)} (obiettivo ${hm(r.bike_s)}) a NP ${Math.round(st.ftp_bike * BIKE_IF[1])} W</span>` : ""));
+  set("lthr_bike", st.lthr_bike > 0 ? `<span>FC in gara <b class="num">${Math.round(st.lthr_bike*0.85)}–${Math.round(st.lthr_bike*0.91)} bpm</b></span><span class="tgt-sub">La soglia cardiaca cambia poco con l'allenamento: in gara conta restare all'85–91%.</span>` : "");
+  set("pace_run", `<span>Target 5h30 <b class="num">${hms(t.pace)}/km</b></span>${st.pace_run > 0 ? gapPill(st.pace_run - t.pace, v => Math.round(v) + " s/km", false) : ""}<span class="tgt-sub">Per correre la mezza a ${hms(t.racePace)}/km dopo la bici</span>`);
+  set("lthr_run", st.lthr_run > 0 ? `<span>FC in gara <b class="num">${Math.round(st.lthr_run*0.88)}–${Math.round(st.lthr_run*0.94)} bpm</b></span><span class="tgt-sub">Mezza dopo la bici: 88–94% della soglia.</span>` : "");
+  set("cp_run", t.cp ? `<span>Target 5h30 <b class="num">~${Math.round(t.cp)} W</b></span>${gapPill(st.cp_run - t.cp, v => Math.round(v) + " W", true)}` : "");
+  const how = $("tgtHow");
+  if (how) how.innerHTML = `<p><b>Bici (${hm(r.bike_s)} sui 90 km):</b> parto dalla tua staffetta 2026 sullo stesso percorso, 2:50:42 a NP 170 W. Per ${hm(r.bike_s)} servono circa <b>${Math.round(t.np)} W di NP</b>. Per correre bene dopo, nel 70.3 si pedala all'80–85% dell'FTP, quindi FTP tra ${Math.round(t.ftpLo)} e ${Math.round(t.ftpHi)} W (target ${Math.round(t.ftp)} W all'82%). Vento e caldo del giorno possono spostare il risultato.</p>
+    <p><b>Corsa (${hms(r.run_s, true)}, ${hms(t.racePace)}/km):</b> dopo 90 km di bici si corre in media l'8–12% più lenti del passo soglia, quindi serve un passo soglia tra ${hms(t.paceLo)} e ${hms(t.paceHi)}/km (target ${hms(t.pace)}). La CP target scala allo stesso modo.</p>
+    <p>I target si aggiornano se cambi i tempi nella sezione Obiettivo.</p>`;
+}
 
 // ---------- materiale ----------
 function renderGear() {

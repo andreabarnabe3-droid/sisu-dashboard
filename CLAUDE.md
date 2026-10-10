@@ -46,3 +46,6 @@ Le corse del piano (run + brick) sono eventi WORKOUT con `external_id = plan_q4_
 Target FC in `% LTHR` (LTHR corsa impostata su intervals: 157, FC max 180); `bpm` assoluti NON sono interpretati dal parser.
 Target corsa allineati alle zone Friel: facile = Z2 85-89% LTHR (≤140 bpm, deciso da Andrea 06/10/2026), medio 92-96%, sotto-soglia 95-98%.
 Generatore: `intervals_export.py` (fuori repo) legge `piano_q4_2026.csv`.
+
+## Target 5h30 sotto le soglie (10/10/2026)
+Calcolati in pagina da `raceTargets()`: bici da staffetta 2026 (2:50:42 a NP 170 W, potenza ~ v^2,5, IF 0,80–0,85); corsa = passo gara / 1,08–1,12; CP scalata col passo; FC in gara come % LTHR (bici 85–91%, corsa 88–94%). Si aggiornano coi tempi della sezione Obiettivo.
