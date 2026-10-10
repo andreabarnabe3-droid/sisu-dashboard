@@ -129,6 +129,15 @@ button{cursor:pointer}
 .split-bar{display:flex;height:34px;border-radius:6px;overflow:hidden;gap:2px}
 .split-bar div{display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--display);font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;min-width:3px}
 .split-bar .t{background:var(--other)}
+.bars{display:flex;flex-direction:column;gap:6px}
+.bar-row{display:grid;grid-template-columns:52px minmax(0,1fr) 96px;gap:8px;align-items:center}
+.bar-lbl{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.bar-tot{font-size:13px;white-space:nowrap;display:flex;gap:6px;align-items:center}
+.bar-tot .pill{font-size:11px;padding:1px 6px}
+.now-legs{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted);padding-left:60px}
+.now-legs span{display:flex;gap:6px;align-items:baseline}
+.now-legs .sq{width:8px;height:8px;flex:none;transform:translateY(1px)}
+@media (max-width:520px){.now-legs{padding-left:0}}
 .legs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 @media (max-width:520px){.legs{grid-template-columns:1fr}}
 .leg{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;background:var(--surface-2)}
@@ -353,7 +362,11 @@ button.item .more{display:block;font-size:11px;color:var(--accent);margin-top:2p
         <h2>Obiettivo 5h30</h2>
         <span class="eyebrow" id="raceDate">30 mag 2027</span>
       </div>
-      <div class="split-bar" id="splitBar" aria-hidden="true"></div>
+      <div class="bars">
+        <div class="bar-row"><span class="bar-lbl">Target</span><div class="split-bar" id="splitBar" aria-hidden="true"></div><span class="bar-tot num" id="barTot">–</span></div>
+        <div class="bar-row"><span class="bar-lbl">Oggi</span><div class="split-bar" id="splitBarNow" aria-hidden="true"></div><span class="bar-tot num" id="barTotNow">–</span></div>
+        <div class="now-legs" id="nowLegs"></div>
+      </div>
       <div class="legs" id="legs"></div>
       <div class="trans">
         <label for="t1">T1 <input class="tin" id="t1" inputmode="numeric"></label>
@@ -579,10 +592,24 @@ function renderRaceTotals() {
   const r = state.settings.race;
   const parts = [["swim_s","var(--swim)","Nuoto"],["t1_s",null,"T1"],["bike_s","var(--bike)","Bici"],["t2_s",null,"T2"],["run_s","var(--run)","Corsa"]];
   const tot = parts.reduce((a, [k]) => a + (r[k] || 0), 0);
-  $("splitBar").innerHTML = parts.map(([k, c, lbl]) => {
-    const w = (r[k] / tot * 100).toFixed(2);
-    return `<div class="${c ? "" : "t"}" style="flex:0 0 calc(${w}% - 2px);${c ? `background:${c}` : ""}" title="${lbl} ${hms(r[k], true)}">${c && w > 12 ? hm(r[k]) : ""}</div>`;
+  const now = projectionNow();
+  const totNow = now.ok ? parts.reduce((a, [k]) => a + (now[k] || 0), 0) : null;
+  const scale = Math.max(tot, totNow || 0);
+  const bar = src => parts.map(([k, c, lbl]) => {
+    const w = (src[k] / scale * 100);
+    return `<div class="${c ? "" : "t"}" style="flex:0 0 calc(${w.toFixed(2)}% - 2px);${c ? `background:${c}` : ""}" title="${lbl} ${hms(src[k], true)}">${c && w > 12 ? hm(src[k]) : ""}</div>`;
   }).join("");
+  $("splitBar").innerHTML = bar(r);
+  $("barTot").textContent = hm(tot);
+  if (now.ok) {
+    $("splitBarNow").innerHTML = bar(now);
+    const dn = totNow - (r.goal_s || GOAL_DEFAULT);
+    $("barTotNow").innerHTML = `${hm(totNow)} <span class="pill ${dn <= 0 ? "ok" : "bad"}">${dn <= 0 ? "−" : "+"}${hm(Math.abs(dn))}</span>`;
+    $("nowLegs").innerHTML = now.notes.map(([c, t]) => `<span><i class="sq" style="background:${c}"></i>${t}</span>`).join("");
+  } else {
+    $("splitBarNow").innerHTML = ""; $("barTotNow").textContent = "–";
+    $("nowLegs").innerHTML = `<span>${esc(now.why)}</span>`;
+  }
   $("totalTime").textContent = hms(tot, true);
   const goal = r.goal_s || GOAL_DEFAULT; const d = tot - goal;
   const pill = $("totalPill");
@@ -998,6 +1025,27 @@ function updateTargets() {
   if (how) how.innerHTML = `<p><b>Bici (${hm(r.bike_s)} sui 90 km):</b> parto dalla tua staffetta 2026 sullo stesso percorso, 2:50:42 a NP 170 W. Per ${hm(r.bike_s)} servono circa <b>${Math.round(t.np)} W di NP</b>. Per correre bene dopo, nel 70.3 si pedala all'80–85% dell'FTP, quindi FTP tra ${Math.round(t.ftpLo)} e ${Math.round(t.ftpHi)} W (target ${Math.round(t.ftp)} W all'82%). Vento e caldo del giorno possono spostare il risultato.</p>
     <p><b>Corsa (${hms(r.run_s, true)}, ${hms(t.racePace)}/km):</b> dopo 90 km di bici si corre in media l'8–12% più lenti del passo soglia, quindi serve un passo soglia tra ${hms(t.paceLo)} e ${hms(t.paceHi)}/km (target ${hms(t.pace)}). La CP target scala allo stesso modo.</p>
     <p>I target si aggiornano se cambi i tempi nella sezione Obiettivo.</p>`;
+}
+
+
+// Stima "Oggi": nuoto dalla media delle ultime nuotate registrate, bici dall'FTP attuale (IF 0,82),
+// corsa dal passo soglia attuale × 1,10, transizioni come da obiettivo.
+function projectionNow() {
+  const r = state.settings.race, st = state.settings, t = raceTargets();
+  const swims = state.acts.filter(a => sportOf(a.st) === "swim" && a.m > 100 && a.s > 0).slice(-4);
+  if (!swims.length) return { ok: false, why: "Stima non disponibile: nessuna nuotata recente registrata." };
+  if (!t.bikeProj || !(st.pace_run > 0)) return { ok: false, why: "Stima non disponibile: inserisci FTP e passo soglia." };
+  const sm = swims.reduce((a, x) => a + x.m, 0), ss = swims.reduce((a, x) => a + x.s, 0);
+  const swimPace = ss / (sm / 100);
+  const runPace = st.pace_run * RUN_F[1];
+  const first = swims[0].d, last = swims[swims.length - 1].d;
+  const out = { ok: true, swim_s: swimPace * DIST.swim / 100, t1_s: r.t1_s, bike_s: t.bikeProj, t2_s: r.t2_s, run_s: runPace * DIST.run / 1000 };
+  out.notes = [
+    ["var(--swim)", `Nuoto ${hm(out.swim_s)} · ${hms(swimPace)}/100 m, media di ${swims.length} nuotate (${fmtDate(first)}–${fmtDate(last)}, ${sm} m)`],
+    ["var(--bike)", `Bici ${hm(out.bike_s)} · FTP ${st.ftp_bike} W a NP ${Math.round(st.ftp_bike * BIKE_IF[1])} W`],
+    ["var(--run)", `Corsa ${hm(out.run_s)} · ${hms(runPace)}/km dal passo soglia ${hms(st.pace_run)}`]
+  ];
+  return out;
 }
 
 // ---------- materiale ----------

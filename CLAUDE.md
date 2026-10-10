@@ -49,3 +49,6 @@ Generatore: `intervals_export.py` (fuori repo) legge `piano_q4_2026.csv`.
 
 ## Target 5h30 sotto le soglie (10/10/2026)
 Calcolati in pagina da `raceTargets()`: bici da staffetta 2026 (2:50:42 a NP 170 W, potenza ~ v^2,5, IF 0,80–0,85); corsa = passo gara / 1,08–1,12; CP scalata col passo; FC in gara come % LTHR (bici 85–91%, corsa 88–94%). Si aggiornano coi tempi della sezione Obiettivo.
+
+## Barra "Oggi" nell'Obiettivo (10/10/2026)
+`projectionNow()`: nuoto = passo medio delle ultime 4 nuotate in `acts` (finestra 180 giorni), bici = `raceTargets().bikeProj` da FTP attuale a IF 0,82, corsa = passo soglia × 1,10, T1/T2 dall'obiettivo. Le due barre usano la stessa scala.
