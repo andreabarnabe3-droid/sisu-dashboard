@@ -21,6 +21,7 @@ Le funzioni SQL sono eseguibili solo da `service_role` (revocate ad anon/authent
 ## Programma di allenamento
 Per aggiungere sessioni: `insert into planned_sessions (session_date, sport, title, duration_min, intensity, details, source) values (...)` con source='claude'. La dashboard le mostra subito (cerchio vuoto = pianificato); cliccando si apre il popup di dettaglio con profilo, passi, recuperi e spiegazione.
 Il piano ott–dic 2026 (source='plan_q4_2026') è generato da `genera_piano_q4_2026.py` (fuori dal repo).
+Lunedì = "Arrampicata + forza dita e tirata" (trave, pinch block, trazioni zavorrate, blocchi, antagonisti; solo parte alta), richiesto da Andrea 12/10/2026. Progressione: ottobre introduzione → fine ott forza massimale → fine nov forza + potenza; scarico = metà serie.
 
 ## Modifiche alla pagina
 Un solo file `index.html` (HTML+CSS+JS inline, nessuna build). Push su `main` → GitHub Pages aggiorna in 1-2 minuti.
