@@ -53,3 +53,6 @@ Calcolati in pagina da `raceTargets()`: bici da staffetta 2026 (2:50:42 a NP 170
 
 ## Barra "Oggi" nell'Obiettivo (10/10/2026)
 `projectionNow()`: nuoto = passo medio delle ultime 4 nuotate in `acts` (finestra 180 giorni), bici = `raceTargets().bikeProj` da FTP attuale a IF 0,82, corsa = passo soglia × 1,10, T1/T2 dall'obiettivo. Le due barre usano la stessa scala.
+
+## Modifiche dirette al piano (23/10/2026)
+Il piano in `planned_sessions` e gli eventi intervals sono stati modificati direttamente nel DB, NON tramite `genera_piano_q4_2026.py`/`piano_q4_2026.csv` (che ora sono superati: non rilanciarli senza riallineare). Modifiche: lunghi corsa 1/11, 8/11, 29/11, 6/12 con finale medio; pulite le note "Era ..."; 14/11 durability 178-190 W; settimane 21/12 e 28/12 diventate carico "ferie" (Andrea in ferie 23/12-6/1); piano esteso al 7/1/2027 con mini-scarico 4-6/1 e TEST FTP giovedì 7/1 (spostato dal 30/12).
