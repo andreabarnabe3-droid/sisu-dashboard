@@ -56,3 +56,7 @@ Calcolati in pagina da `raceTargets()`: bici da staffetta 2026 (2:50:42 a NP 170
 
 ## Modifiche dirette al piano (23/10/2026)
 Il piano in `planned_sessions` e gli eventi intervals sono stati modificati direttamente nel DB, NON tramite `genera_piano_q4_2026.py`/`piano_q4_2026.csv` (che ora sono superati: non rilanciarli senza riallineare). Modifiche: lunghi corsa 1/11, 8/11, 29/11, 6/12 con finale medio; pulite le note "Era ..."; 14/11 durability 178-190 W; settimane 21/12 e 28/12 diventate carico "ferie" (Andrea in ferie 23/12-6/1); piano esteso al 7/1/2027 con mini-scarico 4-6/1 e TEST FTP giovedì 7/1 (spostato dal 30/12).
+
+## Materiale: unità km/ore (26/10/2026)
+`gear.unit` = 'km' | 'h'; `limit_km` contiene il limite nell'unità scelta. `gear_status()` restituisce sia `km` sia `hours`.
+Catena rulli in ore (limite 15 h): sui rulli i km sono virtuali (MyWhoosh). Oliatura rulli reale 23/10/2026; l'evento del 26/10 è marcato 'Annullata' (le DELETE via MCP vengono bloccate).

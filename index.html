@@ -1054,23 +1054,25 @@ function renderGear() {
   if (!state.gear.length) { box.innerHTML = `<span class="none">${state.online ? "Nessun materiale registrato." : "Dati non caricati."}</span>`; return; }
   const today = iso(new Date());
   box.innerHTML = state.gear.map(g => {
-    const km = Number(g.km) || 0, lim = Number(g.limit_km) || 1, pct = km / lim;
+    const isH = g.unit === "h", u = isH ? "h" : "km";
+    const km = Number(isH ? g.hours : g.km) || 0, lim = Number(g.limit_km) || 1, pct = km / lim;
+    const fmtU = v => isH ? `${Math.round(v * 10) / 10} h` : `${Math.round(v)} km`;
     const noDate = !g.since_date;
     const st = noDate ? ["warn", "Data da inserire"] : pct >= 1 ? ["bad", g.kind === "shoes" ? "Da sostituire" : "Da oliare"] : pct >= 0.8 ? ["warn", "Quasi al limite"] : ["ok", "Ok"];
     const col = st[0] === "ok" ? "var(--ok)" : st[0] === "warn" ? "var(--warn)" : "var(--bad)";
     const left = lim - km;
     const since = noDate ? "Registra la data dell'ultima manutenzione" :
-      `${g.kind === "shoes" ? "Dal" : "Ultima volta:"} ${fmtDate(g.since_date, true)} · ${g.n} uscite · ${left >= 0 ? `ancora ${Math.round(left)} km` : `${Math.round(-left)} km oltre`}`;
+      `${g.kind === "shoes" ? "Dal" : "Ultima volta:"} ${fmtDate(g.since_date, true)} · ${g.n} uscite · ${left >= 0 ? `ancora ${fmtU(left)}` : `${fmtU(-left)} oltre`}${isH && g.km > 0 ? ` · ${Math.round(g.km)} km virtuali` : ""}`;
     return `<div class="gi">
       <div class="gi-h"><b>${esc(g.name)}</b><span class="pill ${st[0]}">${st[1]}</span></div>
-      <div class="km num">${noDate ? "—" : km.toFixed(0)}<small>/ ${Math.round(lim)} km</small></div>
+      <div class="km num">${noDate ? "—" : (isH ? km.toFixed(1).replace(".", ",") : km.toFixed(0))}<small>/ ${Math.round(lim)} ${u}</small></div>
       <div class="meter" role="img" aria-label="${Math.round(pct*100)}% del limite"><i style="width:${noDate ? 0 : Math.min(100, pct*100).toFixed(1)}%;background:${col}"></i></div>
       <div class="sub">${esc(since)}</div>
       <details><summary>${esc(g.action_label)} / modifica limite</summary>
         <form data-id="${g.id}">
           <label>Data <input type="date" name="date" value="${today}" max="${today}"></label>
           <button class="btn primary" name="reset" value="1" type="submit">${esc(g.action_label)}</button>
-          <label>Limite <input type="number" name="limit" min="10" max="5000" step="10" value="${Math.round(lim)}"> km</label>
+          <label>Limite <input type="number" name="limit" min="${isH ? 1 : 10}" max="${isH ? 500 : 5000}" step="${isH ? 1 : 10}" value="${Math.round(lim)}"> ${u}</label>
           <button class="btn" name="lim" value="1" type="submit">Salva limite</button>
           <span class="msg" style="flex-basis:100%"></span>
         </form>
