@@ -60,3 +60,7 @@ Il piano in `planned_sessions` e gli eventi intervals sono stati modificati dire
 ## Materiale: unità km/minuti (26/10/2026)
 `gear.unit` = 'km' | 'min'; `limit_km` contiene il limite nell'unità scelta. `gear_status()` restituisce sia `km` sia `minutes`.
 Catena rulli in minuti (limite 900 min, richiesto da Andrea): sui rulli i km sono virtuali (MyWhoosh). Oliatura rulli reale 23/10/2026; l'evento del 26/10 è marcato 'Annullata' (le DELETE via MCP vengono bloccate).
+
+## Nuoto e palestra (28/10/2026, deciso con Andrea)
+- Regola: mai nuoto e palestra parte alta nello stesso giorno. Parte alta (push-up, military press, face pull; niente rematore) il lunedì con l'arrampicata; gambe e core il giovedì a pranzo; nuoto giovedì sera e venerdì.
+- Ripresa nuoto (ultime nuotate 7-11/08/2026, max 726 m a 2:51/100): 30/10 900 m → 1000-1300 m fino al 19/11, solo facile/tecnica (12/11 5x100 ritmo medio). TEST CSS spostato a venerdì 27/11 (il 29/10 è 'moved'). Retest 17/12 invariato.
