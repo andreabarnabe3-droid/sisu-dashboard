@@ -64,3 +64,6 @@ Catena rulli in minuti (limite 900 min, richiesto da Andrea): sui rulli i km son
 ## Nuoto e palestra (28/10/2026, deciso con Andrea)
 - Regola: mai nuoto e palestra parte alta nello stesso giorno. Parte alta (push-up, military press, face pull; niente rematore) il lunedì con l'arrampicata; gambe e core il giovedì a pranzo; nuoto giovedì sera e venerdì.
 - Ripresa nuoto (ultime nuotate 7-11/08/2026, max 726 m a 2:51/100): 30/10 900 m → 1000-1300 m fino al 19/11, solo facile/tecnica (12/11 5x100 ritmo medio). TEST CSS spostato a venerdì 27/11 (il 29/10 è 'moved'). Retest 17/12 invariato.
+
+## FTP 224 (28/10/2026)
+FTP dashboard allineata a MyWhoosh (224 W, prima 215). Tutte le potenze delle sedute future (esclusi i TEST) riscalate ×224/215; 30/15 dell'11/11 fissato a 269 W (120% di 224). Da riallineare dopo il test FTP del 18/11.
