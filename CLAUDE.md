@@ -67,3 +67,9 @@ Catena rulli in minuti (limite 900 min, richiesto da Andrea): sui rulli i km son
 
 ## FTP 224 (28/10/2026)
 FTP dashboard allineata a MyWhoosh (224 W, prima 215). Tutte le potenze delle sedute future (esclusi i TEST) riscalate ×224/215; 30/15 dell'11/11 fissato a 269 W (120% di 224). Da riallineare dopo il test FTP del 18/11.
+
+## Settimana tipo dal 2/11/2026 (decisa con Andrea)
+Lun: nuoto 7:40 (slot 'am', progressione e test CSS qui) + sera arrampicata sciolta senza pesi (nelle settimane di scarico o l'una o l'altro).
+Mar: corsa di qualità · Mer: rulli di qualità · Gio pomeriggio: forza gambe e core alla palestra di arrampicata (kettlebell max 16 kg → esercizi su una gamba, polpacci e nordic obbligatori), arrampicata facile opzionale dopo.
+Ven: corso di nuoto UISP Cavina (dal 6/11, 3 mesi) · Sab: lungo bici + brick · Dom: lungo corsa.
+Palestra Ducati abbandonata (non gli piace). Test CSS lun 30/11, retest lun 4/1. Lun 2/11 a Milano: solo nuoto.
